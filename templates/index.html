@@ -2,10 +2,31 @@
 <html>
 <head>
   <title>Championship Fixtures</title>
+  <!-- Include Bootstrap CSS for styling -->
+  <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" rel="stylesheet">
+  <style>
+    .team-crest {
+      width: 30px; 
+      height: 30px; 
+      border-radius: 50%; 
+      margin-right: 10px; 
+    }
+    .list-group-item {
+      flex-direction: column; /* Stack items vertically */
+      align-items: center; /* Center items horizontally */
+      justify-content: center; /* Center items vertically */
+      text-align: center; /* Center text */
+      padding: 10px; /* Add some padding for better spacing */
+    }
+    .score {
+      margin-top: 10px; /* Space above the score */
+      font-weight: bold; /* Make the score text bold */
+    }
+  </style>
 </head>
 <body>
-  <h1>Championship Fixtures</h1>
-  <ul id="fixtures"></ul>
+  <h1 class="text-center">Championship Fixtures</h1>
+  <ul id="fixtures" class="list-group mt-2"></ul> <!-- The list where items will be added -->
   <script>
     // Fetching the matches from the Flask API
     fetch('/fixtures')
@@ -19,19 +40,43 @@
         // Iterate over each fixture and create a list item
         matches.forEach(fixture => {
           const listItem = document.createElement('li');
-          
+          listItem.className = 'list-group-item';  // Add Bootstrap class for styling
+
           // Format the date for better readability
           const fixtureDate = new Date(fixture.utcDate).toLocaleString();
 
           // Ensure score data exists
-          const homeScore = fixture.score.fullTime.homeTeam !== null ? fixture.score.fullTime.homeTeam : "N/A";
-          const awayScore = fixture.score.fullTime.awayTeam !== null ? fixture.score.fullTime.awayTeam : "N/A";
+          const homeScore = fixture.score.fullTime.home !== null ? fixture.score.fullTime.home : "N/A";
+          const awayScore = fixture.score.fullTime.away !== null ? fixture.score.fullTime.away : "N/A";
 
-          // Build the text content
-          listItem.textContent = `${fixtureDate}: ${fixture.homeTeam.name} vs ${fixture.awayTeam.name} - 
-          Final Score: ${homeScore} - ${awayScore}`;
-          
-          // Append the list item to the list
+          // Create elements for team crests
+          const homeCrest = document.createElement('img');
+          homeCrest.src = fixture.homeTeam.crest;
+          homeCrest.className = 'team-crest';
+
+          const awayCrest = document.createElement('img');
+          awayCrest.src = fixture.awayTeam.crest;
+          awayCrest.className = 'team-crest';
+
+          // Create text nodes for team names
+          const homeTeamName = document.createTextNode(fixture.homeTeam.name);
+          const vsText = document.createTextNode(' vs ');
+          const awayTeamName = document.createTextNode(fixture.awayTeam.name);
+
+          // Create text node for the score
+          const scoreText = document.createElement('div');
+          scoreText.className = 'score';
+          scoreText.textContent = `Final Score: ${homeScore} - ${awayScore}`;
+
+          // Build the text content for the list item
+          listItem.appendChild(homeCrest);
+          listItem.appendChild(homeTeamName);
+          listItem.appendChild(vsText);
+          listItem.appendChild(awayCrest);
+          listItem.appendChild(awayTeamName);
+          listItem.appendChild(scoreText);
+
+          // Append the list item to the fixtures list
           fixturesList.appendChild(listItem);
         });
       })
