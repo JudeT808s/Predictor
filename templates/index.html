@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Championship Fixtures</title>
+</head>
+<body>
+  <h1>Championship Fixtures</h1>
+  <ul id="fixtures"></ul>
+  <script>
+    // Fetching the matches from the Flask API
+    fetch('/fixtures')
+      .then(response => response.json())  // Parse JSON from the response
+      .then(matches => {  // 'matches' is now the array of fixtures
+        console.log('Fixtures:', matches);  // Log the matches for debugging
+
+        // Get the list element to display fixtures
+        const fixturesList = document.getElementById('fixtures');
+
+        // Iterate over each fixture and create a list item
+        matches.forEach(fixture => {
+          const listItem = document.createElement('li');
+          
+          // Format the date for better readability
+          const fixtureDate = new Date(fixture.utcDate).toLocaleString();
+
+          // Ensure score data exists
+          const homeScore = fixture.score.fullTime.homeTeam !== null ? fixture.score.fullTime.homeTeam : "N/A";
+          const awayScore = fixture.score.fullTime.awayTeam !== null ? fixture.score.fullTime.awayTeam : "N/A";
+
+          // Build the text content
+          listItem.textContent = `${fixtureDate}: ${fixture.homeTeam.name} vs ${fixture.awayTeam.name} - 
+          Final Score: ${homeScore} - ${awayScore}`;
+          
+          // Append the list item to the list
+          fixturesList.appendChild(listItem);
+        });
+      })
+      .catch(error => console.error('Error fetching fixtures:', error));  // Handle errors
+  </script>
+</body>
+</html>
