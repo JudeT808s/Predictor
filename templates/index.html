@@ -2,8 +2,8 @@
 <html>
 <head>
   <title>Championship Fixtures</title>
-  <!-- Include Bootstrap CSS for styling -->
   <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
   <style>
     .team-crest {
       width: 30px; 
@@ -22,17 +22,106 @@
       margin-top: 10px; /* Space above the score */
       font-weight: bold; /* Make the score text bold */
     }
+    .badge-win {
+      background-color: #28a745; /* Green for wins */
+      color: white;
+      margin: 0 2px; 
+    }
+    .badge-loss {
+      background-color: #dc3545; /* Red for losses */
+      color: white;
+      margin: 0 2px; 
+    }
   </style>
 </head>
 <body>
   <h1 class="text-center">Championship Fixtures</h1>
-  <ul id="fixtures" class="list-group mt-2"></ul> <!-- The list where items will be added -->
+  
+  <!-- Container for the grid -->
+  <div class="container mt-4">
+    <div class="row">
+      <!-- Column for Teams List -->
+      <div class="col-md-6">
+        <h2 class="text-center">Teams</h2>
+        <ul id="teams-list" class="list-group"></ul>
+      </div>
+
+      <!-- Column for Fixtures List -->
+      <div class="col-md-6">
+        <h2 class="text-center">Fixtures</h2>
+        <ul id="fixtures" class="list-group"></ul>
+      </div>
+    </div>
+  </div>
+
   <script>
     // Fetching the matches from the Flask API
     fetch('/fixtures')
       .then(response => response.json())  // Parse JSON from the response
       .then(matches => {  // 'matches' is now the array of fixtures
         console.log('Fixtures:', matches);  // Log the matches for debugging
+
+        // Create a map of unique teams with their details and win/loss counts
+        const teamsMap = new Map();
+
+        matches.forEach(match => {
+          // Add both home and away teams to the map
+          const teamsTable = [match.homeTeam, match.awayTeam];
+          
+          teamsTable.forEach(team => {
+            if (!teamsMap.has(team.id)) {
+              teamsMap.set(team.id, {
+                name: team.name,
+                crest: team.crest,  // Use crest property
+                wins: 0,  // Initialize win count
+                losses: 0  // Initialize loss count
+              });
+            }
+          });
+
+          // Determine match result and update win/loss counts
+          if (match.score.fullTime.home > match.score.fullTime.away) {
+            // Home team wins, away team loses
+            const homeTeam = teamsMap.get(match.homeTeam.id);
+            homeTeam.wins++;
+            const awayTeam = teamsMap.get(match.awayTeam.id);
+            awayTeam.losses++;
+          } else if (match.score.fullTime.home < match.score.fullTime.away) {
+            // Away team wins, home team loses
+            const awayTeam = teamsMap.get(match.awayTeam.id);
+            awayTeam.wins++;
+            const homeTeam = teamsMap.get(match.homeTeam.id);
+            homeTeam.losses++;
+          }
+        });
+
+        // Convert the map to an array for logging
+        const teamsArray = Array.from(teamsMap.values());
+        console.log('Teams:', teamsArray);  // Log the unique teams
+
+        // Get the unordered list element for teams
+        const teamsList = document.getElementById('teams-list');
+
+        // Populate the teams list
+        teamsArray.forEach(team => {
+          const listItem = document.createElement('li');
+          listItem.className = 'list-group-item';  // Add Bootstrap class for styling
+
+          // Create elements for team crests
+          const teamCrest = document.createElement('img');
+          teamCrest.src = team.crest;
+          teamCrest.className = 'team-crest';
+
+          // Create badges for wins and losses
+          const winBadges = '<span class="badge badge-win">W</span>'.repeat(team.wins);
+          const lossBadges = '<span class="badge badge-loss">L</span>'.repeat(team.losses);
+
+          // Create the HTML for the list item
+          listItem.innerHTML = `<img src="${team.crest}" class="team-crest"> ${team.name} ${winBadges}${lossBadges}`;
+
+          // Append the list item to the teams list
+          teamsList.appendChild(listItem);
+        });
 
         // Get the list element to display fixtures
         const fixturesList = document.getElementById('fixtures');
@@ -51,11 +140,11 @@
 
           // Create elements for team crests
           const homeCrest = document.createElement('img');
-          homeCrest.src = fixture.homeTeam.crest;
+          homeCrest.src = fixture.homeTeam.crest;  // Use correct crest property
           homeCrest.className = 'team-crest';
 
           const awayCrest = document.createElement('img');
-          awayCrest.src = fixture.awayTeam.crest;
+          awayCrest.src = fixture.awayTeam.crest;  // Use correct crest property
           awayCrest.className = 'team-crest';
 
           // Create text nodes for team names
