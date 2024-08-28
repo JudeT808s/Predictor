@@ -55,12 +55,53 @@
   </div>
 
   <script>
-    // Fetching the matches from the Flask API
+    // Fetching the recent results and stats from the Flask API
+    fetch('/recent-results')
+      .then(response => response.json())  // Parse JSON from the response
+      .then(stats => {
+        console.log('Recent Results and Stats:', stats);  // Log the recent results and stats for debugging
+
+        // Iterate over each team in the recent results stats
+        for (const teamName in stats) {
+          if (stats.hasOwnProperty(teamName)) {
+            const teamStats = stats[teamName];
+
+            // Find the corresponding list item in the teams list
+            const teamListItems = document.querySelectorAll('#teams-list li');
+            teamListItems.forEach(item => {
+              if (item.textContent.includes(teamName)) {
+                // Create a div to display recent results and goal stats
+                const statsDiv = document.createElement('div');
+                statsDiv.className = 'team-stats';
+
+                // Add recent results (W/L/D sequence)
+                const resultsText = document.createElement('p');
+                resultsText.textContent = `Recent Results: ${teamStats.recent_results}`;
+                statsDiv.appendChild(resultsText);
+
+                // Add goals scored and opponents' goals conceded
+                const goalsText = document.createElement('p');
+                goalsText.textContent = `Goals Scored: ${teamStats.goals_scored}, Goals Conceded: ${teamStats.opponents_goals_conceded}`;
+                statsDiv.appendChild(goalsText);
+
+                // Add the goal ratio
+                const ratioText = document.createElement('p');
+                ratioText.textContent = `Overall goal form against tougher defence: ${teamStats.goals_ratio.toFixed(2)}`;
+                statsDiv.appendChild(ratioText);
+
+                // Append the stats div to the list item
+                item.appendChild(statsDiv);
+              }
+            });
+          }
+        }
+      })
+      .catch(error => console.error('Error fetching recent results:', error));  // Handle errors
+
+    // Fetching the fixtures from the Flask API
     fetch('/fixtures')
       .then(response => response.json())  // Parse JSON from the response
       .then(matches => {  // 'matches' is now the array of fixtures
-        console.log('Fixtures:', matches);  // Log the matches for debugging
-
         // Create a map of unique teams with their details and win/loss counts
         const teamsMap = new Map();
 
@@ -95,9 +136,8 @@
           }
         });
 
-        // Convert the map to an array for logging
+        // Convert the map to an array for easy iteration
         const teamsArray = Array.from(teamsMap.values());
-        console.log('Teams:', teamsArray);  // Log the unique teams
 
         // Get the unordered list element for teams
         const teamsList = document.getElementById('teams-list');
@@ -170,16 +210,6 @@
         });
       })
       .catch(error => console.error('Error fetching fixtures:', error));  // Handle errors
-
-    // Fetching the recent results and stats from the new endpoint
-    fetch('/recent-results')
-      .then(response => response.json())  // Parse JSON from the response
-      .then(stats => {
-        console.log('Recent Results and Stats:', stats);  // Log the recent results and stats for debugging
-
-        // Get the list element to display recent results
-      })
-      .catch(error => console.error('Error fetching recent results:', error));  // Handle errors
   </script>
 </body>
 </html>
