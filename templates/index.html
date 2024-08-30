@@ -86,15 +86,11 @@
 
                 // Add the goal ratio
                 const lastGameRatio = document.createElement('p');
-                lastGameRatio.textContent = `Goals scored compared to opponents average goals conceded this season: ${teamStats.avg_goals_against_opponents.toFixed(2)}`;
+                lastGameRatio.textContent = `Predicted goals: ${teamStats.avg_goals_against_opponents.toFixed(2)}`;
                 statsDiv.appendChild(lastGameRatio);
 
-                const ratioText = document.createElement('p');
-                ratioText.textContent = `Average goal form against tougher defence: ${teamStats.avg_opponents_goals_conceded.toFixed(2)}`;
-                statsDiv.appendChild(ratioText);
-
-                
-
+              
+              
                 // Append the stats div to the list item
                 item.appendChild(statsDiv);
               }

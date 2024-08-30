@@ -31,7 +31,7 @@ def get_fixtures():
 
     return jsonify(fixtures)
 
-# Route to fetch recent results
+# Route to fetch recent results and performance ratios
 @app.route('/recent-results')
 def get_recent_results():
     def fetch_fixtures_from_api(url):
@@ -45,6 +45,7 @@ def get_recent_results():
     api_endpoint = f"{base_url}/competitions/ELC/matches?status=FINISHED"
     fetched_fixtures = fetch_fixtures_from_api(api_endpoint)
 
+    # Move the calculate_recent_results function inside the route definition
     def calculate_recent_results(fixtures):
         fixtures.sort(key=lambda x: datetime.strptime(x['utcDate'], '%Y-%m-%dT%H:%M:%SZ'))
 
@@ -53,7 +54,8 @@ def get_recent_results():
             'total_goals_scored': 0,
             'total_opponents_goals_conceded': 0,
             'matches_played': 0,
-            'goals_against_opponents': []
+            'goals_against_opponents': [],
+            'performance_ratios': []
         })
 
         for match in fixtures:
@@ -76,17 +78,24 @@ def get_recent_results():
             team_stats[home_team_id]['matches_played'] += 1
             team_stats[away_team_id]['matches_played'] += 1
 
-            # Calculate goals_against_opp_goals_conceded for the home and away team
+            # Calculate goals against opponent's goals conceded for each team
+            avg_away_team_conceded = team_stats[away_team_id]['total_opponents_goals_conceded'] / team_stats[away_team_id]['matches_played'] if team_stats[away_team_id]['matches_played'] > 0 else 0
+            avg_home_team_conceded = team_stats[home_team_id]['total_opponents_goals_conceded'] / team_stats[home_team_id]['matches_played'] if team_stats[home_team_id]['matches_played'] > 0 else 0
+
             home_goals_against_opp_goals_conceded = (
-                home_team_goals / away_team_goals if away_team_goals > 0 else 0
+                home_team_goals / avg_away_team_conceded if avg_away_team_conceded > 0 else 0
             )
             away_goals_against_opp_goals_conceded = (
-                away_team_goals / home_team_goals if home_team_goals > 0 else 0
+                away_team_goals / avg_home_team_conceded if avg_home_team_conceded > 0 else 0
             )
 
             # Append the calculated ratio for each team
             team_stats[home_team_id]['goals_against_opponents'].append(home_goals_against_opp_goals_conceded)
             team_stats[away_team_id]['goals_against_opponents'].append(away_goals_against_opp_goals_conceded)
+
+            # Append the performance ratios for later averaging
+            team_stats[home_team_id]['performance_ratios'].append(home_goals_against_opp_goals_conceded)
+            team_stats[away_team_id]['performance_ratios'].append(away_goals_against_opp_goals_conceded)
 
             # Determine match result
             home_result = 'D'
@@ -137,28 +146,26 @@ def get_recent_results():
                 sum(stats['goals_against_opponents']) / len(stats['goals_against_opponents'])
                 if stats['goals_against_opponents'] else 0
             )
-            #Goals ratio according to defence difficulty
-            goals_scored_ratio = home_team_goals / avg_opponents_goals_conceded
 
-            #Need to loop through with above calculation to get form
+            # Calculate the average performance ratio for each team
+            average_performance_ratio = (
+                sum(stats['performance_ratios']) / len(stats['performance_ratios'])
+                if stats['performance_ratios'] else 0
+            )
 
             recent_results_and_stats[team_name] = {
                 'team_id': team_id,
                 'recent_results': results,
                 'goals_scored': goals_scored,
                 'goals_conceded': goals_conceded,
-                #Average goals conceded by opponents accross all matches
                 'avg_opponents_goals_conceded': avg_opponents_goals_conceded,
-                #Average amount of goals scored i think
-                'avg_goals_against_opponents': avg_goals_against_opponents
+                'avg_goals_against_opponents': avg_goals_against_opponents,
+                'average_performance_ratio': average_performance_ratio
             }
 
         return recent_results_and_stats
 
     recent_results = calculate_recent_results(fetched_fixtures)
-
-    # Add debug print statements if needed
-    # print(recent_results)  # For debugging
 
     return jsonify(recent_results)
 
